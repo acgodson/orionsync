@@ -14,8 +14,8 @@ Make sure you have the following tools installed:
 1. Clone the repository:
 
 ```shell
-git clone <repository-url>
-cd wallet-factory
+git clone https://github.com/acgodson/orionsync/
+cd Smart-contract
 ```
 
 2. Install the dependencies:
