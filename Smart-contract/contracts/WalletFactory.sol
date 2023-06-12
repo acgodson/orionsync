@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
+
 import "./OrionWallet.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract WalletFactory {
+contract WalletFactory is Ownable {
     event SpaceCreated(uint256 indexed spaceId, address indexed leader);
     event WalletCreated(uint256 indexed spaceId, address indexed wallet);
+
+    // uint private deploymentNonce = 1;
+
+    uint public salt;
 
     struct Space {
         address leader;
@@ -17,6 +23,7 @@ contract WalletFactory {
 
     mapping(uint256 => Space) public spaces;
     mapping(uint256 => address) public wallets;
+    mapping(uint256 => address) public wallets2;
 
     /**
      * @dev Creates a new space with specified participants and proposed shares.
@@ -35,11 +42,15 @@ contract WalletFactory {
             _participants.length == _proposedShares.length,
             "Mismatch between participants and proposedShares"
         );
-
         Space storage space = spaces[spaceId];
-        space.leader = msg.sender;
         space.participants = _participants;
         space.proposedShares = _proposedShares;
+        require(
+            space.participants.length > 0,
+            "Failed to update partcicpants" //this is used to test a bug
+        );
+
+        space.leader = msg.sender; // Assign the leader address
         space.walletCreated = false;
 
         // Set the leader's signature to true
@@ -102,10 +113,7 @@ contract WalletFactory {
         return true;
     }
 
-    /**
-     * @dev Creates a new wallet for a space using Create2 deployment.
-     * @param spaceId The ID of the space.
-     */
+    //  * @dev Creates a new wallet for a space using Create2 deployment.
     function createWallet(uint256 spaceId) internal {
         Space storage space = spaces[spaceId];
 
@@ -113,25 +121,34 @@ contract WalletFactory {
         address[] memory participants = space.participants;
         uint256[] memory shares = space.proposedShares;
 
-        // Generate salt using the spaceID and a randomly generated nonce
-        bytes32 salt = keccak256(
-            abi.encodePacked(spaceId, uint256(block.number))
-        );
+        // Generate salt using the spaceID and the deploymentNonce
+        // bytes32 salt = spaceId;
 
-        // Create a new wallet using Create2 deployment
+        // Compute the expected address based on the deployment bytecode and salt
+        // bytes memory bytecode = type(OrionWallet).creationCode;
+        // address expectedAddress = Create2.computeAddress(
+        //     bytes32(salt),
+        //     keccak256(bytecode)
+        // );
+
+        // Create the wallet if it doesn't already exist
         address wallet = Create2.deploy(
             0,
-            salt,
+            bytes32(salt),
             type(OrionWallet).creationCode
         );
+
         OrionWallet(payable(wallet)).initialize(participants, shares);
 
         // Mark wallet as created for the space
         space.walletCreated = true;
 
         // Store the wallet address in the mapping
-        wallets[spaceId] = wallet;
+        wallets[spaceId] = address(wallet);
 
-        emit WalletCreated(spaceId, wallet);
+        // Increment the deploymentNonce for the next wallet creation
+        salt++;
+
+        emit WalletCreated(spaceId, address(wallet));
     }
 }
