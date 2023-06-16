@@ -5,13 +5,23 @@ import "./OrionWallet.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// PUSH Comm Contract Interface
+interface IPUSHCommInterface {
+    function sendNotification(
+        address _channel,
+        address _recipient,
+        bytes calldata _identity
+    ) external;
+}
+
 contract WalletFactory is Ownable {
     event SpaceCreated(uint256 indexed spaceId, address indexed leader);
     event WalletCreated(uint256 indexed spaceId, address indexed wallet);
 
-    // uint private deploymentNonce = 1;
+    address public EPNS_COMM_ADDRESS =
+        0xb3971BCef2D791bc4027BbfedFb47319A4AAaaAa;
 
-    uint public salt;
+    bytes32 public salt;
 
     struct Space {
         address leader;
@@ -23,7 +33,6 @@ contract WalletFactory is Ownable {
 
     mapping(uint256 => Space) public spaces;
     mapping(uint256 => address) public wallets;
-    mapping(uint256 => address) public wallets2;
 
     /**
      * @dev Creates a new space with specified participants and proposed shares.
@@ -69,8 +78,9 @@ contract WalletFactory is Ownable {
      * @param spaceId The ID of the space.
      * @return A boolean indicating if the space has been created.
      */
+
     function isSpaceCreated(uint256 spaceId) public view returns (bool) {
-        return spaces[spaceId].walletCreated;
+        return spaces[spaceId].leader != address(0);
     }
 
     /**
@@ -122,33 +132,52 @@ contract WalletFactory is Ownable {
         uint256[] memory shares = space.proposedShares;
 
         // Generate salt using the spaceID and the deploymentNonce
-        // bytes32 salt = spaceId;
+        salt = keccak256(abi.encode(spaceId)); // Update the contract-level salt
 
         // Compute the expected address based on the deployment bytecode and salt
-        // bytes memory bytecode = type(OrionWallet).creationCode;
-        // address expectedAddress = Create2.computeAddress(
-        //     bytes32(salt),
-        //     keccak256(bytecode)
-        // );
+        bytes memory bytecode = type(OrionWallet).creationCode;
+        address expectedAddress = Create2.computeAddress(
+            salt,
+            keccak256(bytecode)
+        );
 
         // Create the wallet if it doesn't already exist
         address wallet = Create2.deploy(
             0,
-            bytes32(salt),
+            salt,
             type(OrionWallet).creationCode
         );
 
         OrionWallet(payable(wallet)).initialize(participants, shares);
 
-        // Mark wallet as created for the space
-        space.walletCreated = true;
+        // Require the deployed address to be equal to the expected address
+        require(
+            address(wallet) == expectedAddress,
+            "Deployed address does not match the expected address"
+        );
 
         // Store the wallet address in the mapping
         wallets[spaceId] = address(wallet);
 
-        // Increment the deploymentNonce for the next wallet creation
-        salt++;
-
+        space.walletCreated = true;
         emit WalletCreated(spaceId, address(wallet));
+    }
+
+    function addressToString(
+        address addr
+    ) internal pure returns (string memory) {
+        bytes32 value = bytes32(uint256(uint160(addr)));
+        bytes memory alphabet = "0123456789abcdef";
+
+        bytes memory str = new bytes(42);
+        str[0] = "0";
+        str[1] = "x";
+
+        for (uint256 i = 0; i < 20; i++) {
+            str[2 + i * 2] = alphabet[uint8(value[i + 12] >> 4)];
+            str[3 + i * 2] = alphabet[uint8(value[i + 12] & 0x0f)];
+        }
+
+        return string(str);
     }
 }
