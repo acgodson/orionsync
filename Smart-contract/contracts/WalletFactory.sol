@@ -15,8 +15,8 @@ interface IPUSHCommInterface {
 }
 
 contract WalletFactory is Ownable {
-    event SpaceCreated(uint256 indexed spaceId, address indexed leader);
-    event WalletCreated(uint256 indexed spaceId, address indexed wallet);
+    event SpaceCreated(address indexed spaceId, address indexed leader);
+    event WalletCreated(address indexed spaceId, address indexed wallet);
 
     address public EPNS_COMM_ADDRESS =
         0xb3971BCef2D791bc4027BbfedFb47319A4AAaaAa;
@@ -24,15 +24,15 @@ contract WalletFactory is Ownable {
     bytes32 public salt;
 
     struct Space {
-        address leader;
+        address leader; //retrievable
         address[] participants;
         uint256[] proposedShares;
-        bool walletCreated;
+        bool walletCreated; //retrievable
         mapping(address => bool) participantsSigned;
     }
 
-    mapping(uint256 => Space) public spaces;
-    mapping(uint256 => address) public wallets;
+    mapping(address => Space) public spaces;
+    mapping(address => address) public wallets;
 
     /**
      * @dev Creates a new space with specified participants and proposed shares.
@@ -41,7 +41,7 @@ contract WalletFactory is Ownable {
      * @param _proposedShares The proposed shares for each participant.
      */
     function createSpace(
-        uint256 spaceId,
+        address spaceId,
         address[] memory _participants,
         uint256[] memory _proposedShares
     ) external {
@@ -79,7 +79,7 @@ contract WalletFactory is Ownable {
      * @return A boolean indicating if the space has been created.
      */
 
-    function isSpaceCreated(uint256 spaceId) public view returns (bool) {
+    function isSpaceCreated(address spaceId) public view returns (bool) {
         return spaces[spaceId].leader != address(0);
     }
 
@@ -87,7 +87,7 @@ contract WalletFactory is Ownable {
      * @dev Allows a participant to sign the agreement for a space.
      * @param spaceId The ID of the space.
      */
-    function signAgreement(uint256 spaceId) external {
+    function signAgreement(address spaceId) external {
         require(isSpaceCreated(spaceId), "Space does not exist");
         require(
             !spaces[spaceId].participantsSigned[msg.sender],
@@ -103,13 +103,20 @@ contract WalletFactory is Ownable {
         }
     }
 
+    function isParticipantSigned(
+        address spaceId,
+        address participant
+    ) external view returns (bool) {
+        return spaces[spaceId].participantsSigned[participant];
+    }
+
     /**
      * @dev Checks if all participants of a space have signed the agreement.
      * @param spaceId The ID of the space.
      * @return A boolean indicating if all participants have signed.
      */
     function allParticipantsSigned(
-        uint256 spaceId
+        address spaceId
     ) internal view returns (bool) {
         Space storage space = spaces[spaceId];
 
@@ -124,7 +131,7 @@ contract WalletFactory is Ownable {
     }
 
     //  * @dev Creates a new wallet for a space using Create2 deployment.
-    function createWallet(uint256 spaceId) internal {
+    function createWallet(address spaceId) internal {
         Space storage space = spaces[spaceId];
 
         // Retrieve participants and shares for the space
@@ -161,6 +168,31 @@ contract WalletFactory is Ownable {
 
         space.walletCreated = true;
         emit WalletCreated(spaceId, address(wallet));
+
+        for (uint256 i = 0; i < participants.length; i++) {
+            address recipient = participants[i];
+            IPUSHCommInterface(
+                address(0xb3971BCef2D791bc4027BbfedFb47319A4AAaaAa)
+            ).sendNotification(
+                    recipient,
+                    address(0xf2750684eB187fF9f82e2F980f6233707eF5768C),
+                    bytes(
+                        string(
+                            // We are passing identity here: https://docs.epns.io/developers/developer-guides/sending-notifications/advanced/notification-payload-types/identity/payload-identity-implementations
+                            abi.encodePacked(
+                                "0", // this is notification identity: https://docs.epns.io/developers/developer-guides/sending-notifications/advanced/notification-payload-types/identity/payload-identity-implementations
+                                "+", // segregator
+                                "3", // this is payload type: https://docs.epns.io/developers/developer-guides/sending-notifications/advanced/notification-payload-types/payload (1, 3 or 4) = (Broadcast, targetted or subset)
+                                "+", // segregator
+                                "New Wallet", // this is notificaiton title
+                                "+", // segregator
+                                "Consensus Wallet has been created successfully with address "
+                                // notification body
+                            )
+                        )
+                    )
+                );
+        }
     }
 
     function addressToString(

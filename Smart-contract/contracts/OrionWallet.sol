@@ -4,13 +4,16 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract OrionWallet is Initializable {
-    struct Deposit {
+    struct Transaction {
         uint256 amount;
         uint256 timestamp;
+        address sender;
+        address receiver;
+        bool isDeposit;
     }
 
     mapping(address => uint256) public balances;
-    mapping(address => Deposit[]) public deposits;
+    mapping(address => Transaction[]) public transactionHistory;
     mapping(address => uint256) public shares;
     address[] public owners;
 
@@ -57,7 +60,9 @@ contract OrionWallet is Initializable {
             uint256 amount = (msg.value * share) / 100;
 
             balances[owner] += amount;
-            deposits[owner].push(Deposit(amount, block.timestamp));
+            transactionHistory[owner].push(
+                Transaction(amount, block.timestamp, msg.sender, owner, true)
+            );
         }
     }
 
@@ -68,6 +73,15 @@ contract OrionWallet is Initializable {
 
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "Withdrawal failed");
+        transactionHistory[msg.sender].push(
+            Transaction(
+                amount,
+                block.timestamp,
+                msg.sender,
+                address(this),
+                false
+            )
+        );
     }
 
     function transfer(
@@ -80,6 +94,13 @@ contract OrionWallet is Initializable {
 
         (bool success, ) = recipient.call{value: amount}("");
         require(success, "Transfer failed");
+
+        transactionHistory[msg.sender].push(
+            Transaction(amount, block.timestamp, msg.sender, recipient, false)
+        );
+        transactionHistory[recipient].push(
+            Transaction(amount, block.timestamp, msg.sender, recipient, false)
+        );
     }
 
     function isOwner(address ownerAddress) public view returns (bool) {
@@ -89,5 +110,8 @@ contract OrionWallet is Initializable {
             }
         }
         return false;
+    }
+       function getTransactionHistory(address account) public view returns (Transaction[] memory) {
+        return transactionHistory[account];
     }
 }
