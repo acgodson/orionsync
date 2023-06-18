@@ -52,7 +52,7 @@ export function useSpaceInfo(spaceId: string) {
         if (spaceId && !spaceCreated) {
             isSpaceCreated();
         }
-    }, [spaceId, spaceCreated, walletCreated]);
+    }, [spaceId, address, spaceCreated, walletCreated]);
 
     return { spaceCreated, walletCreated, setSpaceCreated };
 }
@@ -115,7 +115,7 @@ export function useWalletInfo(spaceId: string, address: string) {
         if (spaceCreated && !spaceWallet) {
             getSpaceWallet();
         }
-    }, [spaceCreated, spaceWallet]);
+    }, [spaceCreated, address,spaceId, spaceWallet]);
 
     useEffect(() => {
         const getWalletInfo = async () => {
@@ -165,7 +165,7 @@ export function useWalletInfo(spaceId: string, address: string) {
         if (walletCreated && spaceWallet && !walletInfo) {
             getWalletInfo();
         }
-    }, [spaceWallet, walletCreated, walletInfo]);
+    }, [spaceWallet,address, walletCreated, walletInfo]);
 
     return { totalBalance, spaceWallet, walletInfo, withdraw, history };
 }
@@ -226,7 +226,7 @@ export function useSignAgreement(spaceId: string, participantAddresses: string[]
         if (participantAddresses.length > 0 && spaceId && !signatureStatuses) {
             checkSignatureStatuses();
         }
-    }, [participantAddresses, spaceId, signatureStatuses]);
+    }, [participantAddresses,address,  spaceId, signatureStatuses]);
 
 
 
@@ -259,7 +259,7 @@ export function useSignAgreement(spaceId: string, participantAddresses: string[]
         };
 
         isParticipantSigned();
-    }, []);
+    }, [address, spaceId]);
 
     return { signatureStatuses, isUserSigned, signAgreement };
 };

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { CloseIcon } from "@chakra-ui/icons";
 import { Input, Box, VStack, HStack, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Center, Spinner, FormControl, FormLabel, IconButton, Heading, ModalFooter } from "@chakra-ui/react";
-import { useCreateSpace } from "./walletHooks";
+import { useCreateSpace } from "@/hooks/walletHooks";
 
 
-export function CreateSpaceForm(prop: { spaceId: string }) {
+export default function CreateSpaceForm(prop: { spaceId: string }) {
   const spaceId = prop.spaceId;
 
   const [isModalOpen, setIsModalOpen] = useState(false);

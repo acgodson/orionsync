@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { useAccount } from "wagmi";
-import { useSpaceInfo, useWalletInfo, useCreateSpace, useSignAgreement } from '@/pages/walletHooks';
+import { useSpaceInfo, useWalletInfo, useCreateSpace, useSignAgreement } from '@/hooks/walletHooks';
 import { Box, HStack, Text, Icon, Divider, VStack, Heading, Button, Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
 import { FaCheckCircle, FaClock } from 'react-icons/fa';
 import { handleOpenExplorer, shortenAddress } from '@/constants';
-import { CreateSpaceForm } from './createSpaceForm';
+import CreateSpaceForm from './createSpaceForm';
 import { FiExternalLink } from 'react-icons/fi';
 
 export type Address = string | null;
@@ -166,9 +166,10 @@ const ConsensusWallet = ({ spaceId }: { spaceId: string }) => {
                             h="49px"
                             bg="gray.200"
                             onClick={() => handleOpenExplorer(spaceWallet)}
-                            children={<FiExternalLink />}
+
                             aria-label="open explorer"
-                        />
+                        ><FiExternalLink />
+                        </Button>
                     </HStack>
                 )}
 
