@@ -1,6 +1,6 @@
 # ORIONSync
 
-##Imagine working on a hackathon project with strangers!
+## Imagine working on a hackathon project with strangers!
 
 OrionSync is a Multi-signature workspace for BuildLers to collaborate effectively on projects, and fairly distribute prizes/revenue
 
