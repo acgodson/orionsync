@@ -89,6 +89,7 @@ const HomePanel = ({
         {meetingActions.getRecordings().map((recording: any) => {
           return (
             <Recording
+              key={Math.random()}
               id={recording.id}
               name={recording.name}
               url={recording.url}
