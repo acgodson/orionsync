@@ -49,7 +49,7 @@ const Events = () => {
 
       <div className=" flex flex-col w-full">
         {schedule.map((items, i) => (
-          <div className=" flex gap-[50px] pl-[30px] py-6">
+          <div key={i} className=" flex gap-[50px] pl-[30px] py-6">
             <div className=" w-[140px]">
               <p>{items.date}</p>
               <p>{items.time}</p>
