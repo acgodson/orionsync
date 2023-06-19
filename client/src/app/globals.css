@@ -1,0 +1,44 @@
+@import "~loaders.css/loaders.min.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* :root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 40, 40, 40;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+} */
+
+html {
+  @apply font;
+}
+
+body {
+  @apply bg-body text-text-primary max-h-screen overflow-hidden;
+}
+
+.__EmojiPicker__.epr-emoji-native {
+  @apply !font-emoji-color;
+}
+
+.ball-scale-multiple > div {
+  @apply bg-[#ff6e55];
+}
